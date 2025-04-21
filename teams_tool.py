@@ -15,8 +15,6 @@ load_dotenv()
 # Configuration Class
 @dataclass
 class TeamsConfig:
-    # IMPORTANT: Hardcoding the webhook URL is generally insecure and inflexible.
-    # Consider using environment variables or a configuration file in a real application.
     webhook_url: str = os.getenv("TEAMS_WEBHOOK_URL")
     timeout: int = 30
     max_retries: int = 3
@@ -24,13 +22,13 @@ class TeamsConfig:
 
 # Logging Setup (optional within the tool, but good practice)
 logging.basicConfig(
-    level=logging.INFO, # Consider WARNING or ERROR for less verbose tool output
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
     ]
 )
-logger = logging.getLogger("TeamsNotificationTool") # Use a specific logger name
+logger = logging.getLogger("TeamsNotificationTool")
 
 # Input Validation Helper
 def validate_and_convert_to_string(value: Any, field_name: str) -> str:
@@ -82,15 +80,15 @@ class TeamsNotification:
                                 "type": "TextBlock",
                                 "size": "Large",
                                 "weight": "Bolder",
-                                "text": "New Lead - User Sign up (via Research Agent)", # Modified title
+                                "text": "New Lead - User Sign up (via Research Agent)",
                                 "isSubtle": True
                             }
                         ],
                         "actions": [
                              {
                                 "type": "Action.OpenUrl",
-                                "title": "Source Info (if available)", # Generic action
-                                "url": card_data.get("source_url", "https://app.kocoro.ai/") # Example: Use a source URL if provided
+                                "title": "Source Info (if available)",
+                                "url": card_data.get("source_url", "https://app.kocoro.ai/")
                             },
                              # Add more generic actions or make them dynamic if needed
                         ],
@@ -454,15 +452,3 @@ class TeamsNotificationTool(Tool):
 
 # Instantiate the tool for use
 teams_notification_tool = TeamsNotificationTool()
-
-# Example Usage (for testing):
-# result_message = teams_notification_tool.forward(
-#     LeadCompanyName="Example Corp",
-#     userName="John Doe",
-#     userEmail="john.doe@example.com",
-#     refinedURL="https://example.com",
-#     CompanyInfo_Short="A test company for demonstration.",
-#     LeadScoreLevel="★★★★☆",
-#     mention_email="your_teams_email@your_domain.com" # Add a real email to test mentions
-# )
-# print(result_message)

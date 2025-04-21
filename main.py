@@ -1,5 +1,8 @@
-from smolagents import CodeAgent, GoogleSearchTool, VisitWebpageTool, OpenAIServerModel
+from smolagents import CodeAgent, OpenAIServerModel
+from exa_tool import ExaTool
+from firecrawl_tool import FirecrawlCrawlTool
 from teams_tool import TeamsNotificationTool
+from similarweb_tools import SimilarWebGeneralDataTool
 import textwrap
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -11,10 +14,11 @@ from openai import OpenAI
 load_dotenv()
 
 model = OpenAIServerModel(
-    model_id="gpt-4o",
+    model_id="gpt-4.1",
     api_key=os.getenv("OPENAI_API_KEY")
 )
-agent = CodeAgent(tools=[GoogleSearchTool(), VisitWebpageTool(), TeamsNotificationTool()], model=model)
+
+agent = CodeAgent(tools=[TeamsNotificationTool(), SimilarWebGeneralDataTool(), ExaTool(), FirecrawlCrawlTool()], model=model)
 
 class PromptInput(BaseModel):
     prompt: str
@@ -33,14 +37,15 @@ When a lead submits an interest form, we populate our database with the followin
   "userName": "",
   "account_phone": "",
   "LeadCompanyName": "",
-  "LastMonthPV": "",
   "potential_mrr": "",
   "technology_name": "",
   "employee_range": "",
 }
-Note that "LastMonthPV", "potential_mrr", "technology_name" (representing which marketing technologies the company has used in the past), and "employee_range" are generated from Similarweb data ONLY IF the visitor provides their company name. If "LeadCompanyName" is not filled out by the sales lead, then these fields are left as empty strings.
+Note that "potential_mrr", "technology_name" (representing which marketing technologies the company has used in the past), and "employee_range" are generated from Similarweb data ONLY IF the visitor provides their company name. If "LeadCompanyName" is not filled out by the sales lead, then these fields are left as empty strings.
 
 You job is to research both the sales lead's company, as well as the sales lead's position within the company. After collecting the information, evaluate the priority level of this sales lead from ★☆☆☆☆ to ★★★★★. You should take into consideration, among other things, the company's potential to be a long-term paying customer as well as the seniority and decision-making power of the sales lead within the organization.
+
+If you find the company website (or if it's provided), use the similarweb_general_data_tool to calculate LastMonthPV by multiplying estimated_monthly_visits by page_per_visit for the most recent month.
 
 Make sure to provide the information in Japanese!
 
@@ -55,7 +60,7 @@ Try to include the following information:
   "LeadScoreLevel": "", // evaluation of the lead's potential (1-5)
   "ReasonforPrioritization": "", // pros of the lead (short explanation)
   "ReasonforDeprioritization": "", // cons of the lead (short explanation)
-  "LastMonthPV": "", // either passed as input or left empty
+  "LastMonthPV": "", // calculated from data provided by similarweb_general_data_tool
   "potential_mrr": "", // either passed as input or left empty
   "account_phone": "", // either passed as input or left empty
   "refinedURL": "", // URL of the lead's company (if not provided, search for it based on the lead's name and email)
@@ -68,7 +73,7 @@ Try to include the following information:
 
 When done researching, please use the send_lead_notification_to_teams tool to send the results as a notification to our dedicated Teams channel. The input should be a JSON object. Fields that cannot be found or that you are unable to fill out MUST be left as empty strings.
 
-Finally, use the final_answer tool to document completion of the task.
+Finally, use the final_answer tool to directly output the results as well.
 
 
 
